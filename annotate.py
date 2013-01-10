@@ -54,7 +54,7 @@ class GitAnnotateCommand(GitTextCommand):
         self.active_view().settings().set('live_git_annotations', True)
         root = git_root(self.get_working_dir())
         repo_file = os.path.relpath(self.view.file_name(), root)
-        self.run_command(['git', 'show', 'HEAD:{0}'.format(repo_file)], show_status=False, no_save=True, callback=self.compare_tmp, stdout=self.tmp)
+        self.run_command(['git', 'show', 'HEAD:{0}'.format(repo_file)], show_status=False, no_save=True, callback=self.compare_tmp, stdout=self.tmp, use_stderr=False)
 
     def compare_tmp(self, result, stdout=None):
         all_text = self.view.substr(sublime.Region(0, self.view.size())).encode("utf-8")

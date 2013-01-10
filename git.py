@@ -87,11 +87,12 @@ def _make_text_safeish(text, fallback_encoding, method='decode'):
 
 
 class CommandThread(threading.Thread):
-    def __init__(self, command, on_done, working_dir="", fallback_encoding="", **kwargs):
+    def __init__(self, command, on_done, working_dir="", fallback_encoding="", use_stderr=True, **kwargs):
         threading.Thread.__init__(self)
         self.command = command
         self.on_done = on_done
         self.working_dir = working_dir
+        self.use_stderr = use_stderr
         if "stdin" in kwargs:
             self.stdin = kwargs["stdin"]
         else:
@@ -116,7 +117,8 @@ class CommandThread(threading.Thread):
                     os.chdir(self.working_dir)
 
                 proc = subprocess.Popen(self.command,
-                    stdout=self.stdout, stderr=subprocess.STDOUT,
+                    stdout=self.stdout,
+                    stderr=subprocess.STDOUT if self.use_stderr else None,
                     stdin=subprocess.PIPE,
                     shell=shell, universal_newlines=True)
                 output = proc.communicate(self.stdin)[0]
