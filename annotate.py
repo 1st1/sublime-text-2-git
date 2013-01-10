@@ -1,6 +1,7 @@
 import tempfile
 import re
 import os
+import functools
 
 import sublime
 import sublime_plugin
@@ -24,14 +25,25 @@ class GitToggleAnnotationsCommand(GitTextCommand):
 
 
 class GitAnnotationListener(sublime_plugin.EventListener):
+    def __init__(self, *args, **kwargs):
+        super(GitAnnotationListener, self).__init__(*args, **kwargs)
+        self.last_update = {}
+
     def on_modified(self, view):
         if not view.settings().get('live_git_annotations'):
             return
-        view.run_command('git_annotate')
+        if view in self.last_update:
+            return
+        self.last_update[view] = True
+        def cb(self, view):
+            del self.last_update[view]
+            view.run_command('git_annotate')
+        # buffer annotations
+        sublime.set_timeout(functools.partial(cb, self, view), 500)
 
     def on_load(self, view):
         s = sublime.load_settings("Git.sublime-settings")
-        if s.get('annotations'):
+        if s.get('annotations') or view.settings().get('live_git_annotations'):
             view.run_command('git_annotate')
 
 
