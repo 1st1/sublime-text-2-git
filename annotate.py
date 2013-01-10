@@ -76,27 +76,25 @@ class GitAnnotateCommand(GitTextCommand):
             line_before, len_before, line_after, len_after = [int(match.group(x)) for x in [1, 2, 3, 4]]
             chunk_index = line_index + 1
             tracked_line_index = line_after - 1
-            deletion = False
-            insertion = False
+            deletions = []
             while True:
                 line = lines[chunk_index]
                 if line.startswith('@'):
                     break
                 elif line.startswith('-'):
-                    if not line.strip() == '-':
-                        deletion = True
+                    deletions.append(tracked_line_index)
                     tracked_line_index -= 1
                 elif line.startswith('+'):
-                    if deletion and not line.strip() == '+':
+                    if deletions:
                         diff.append(['x', tracked_line_index])
-                        insertion = True
-                    elif not deletion:
-                        insertion = True
+                        deletions.pop()
+                    elif not deletions:
                         diff.append(['+', tracked_line_index])
                 else:
-                    if not insertion and deletion:
-                        diff.append(['-', tracked_line_index])
-                    insertion = deletion = False
+                    if deletions:
+                        for idx in deletions:
+                            diff.append(['-', idx])
+                        deletions = []
                 tracked_line_index += 1
                 chunk_index += 1
                 if chunk_index >= len(lines):
@@ -124,5 +122,5 @@ class GitAnnotateCommand(GitTextCommand):
                     region = sublime.Region(point, point + 5)
                 typed_diff[change_type].append(region)
 
-        for change in ['x', '+']:
+        for change in ['x', '+', '-']:
             self.view.add_regions("git.changes.{0}".format(change), typed_diff[change], 'git.changes.{0}'.format(change), 'dot', sublime.HIDDEN)
